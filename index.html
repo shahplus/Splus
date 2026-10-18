@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>3ichi - Crypto Market</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Syncopate:wght@700&display=swap');
+
+    :root {
+      --bg-color: #080001;
+      --card-bg: rgba(255, 51, 51, 0.03);
+      --border-color: rgba(255, 51, 51, 0.2);
+      --neon-red: #ff3333;
+      --neon-red-glow: rgba(255, 51, 51, 0.6);
+      --neon-green: #00ff66;
+      --neon-green-glow: rgba(0, 255, 102, 0.4);
+      --text-main: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 30px;
+      background-image: radial-gradient(circle at 50% 0%, rgba(255, 0, 51, 0.1) 0%, transparent 50%);
+    }
+
+    .container {
+      width: 95%;
+      max-width: 500px;
+      text-align: center;
+      z-index: 10;
+      margin-top: 20px;
+    }
+
+    /* هدر */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .back-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--neon-red);
+      padding: 8px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .back-btn:hover {
+      background: rgba(255, 51, 51, 0.2);
+      box-shadow: 0 0 10px var(--neon-red-glow);
+    }
+    h1 {
+      font-family: 'Syncopate', sans-serif;
+      font-size: 24px;
+      color: var(--neon-red);
+      text-shadow: 0 0 10px var(--neon-red-glow);
+      margin: 0;
+    }
+
+    /* کارت‌های شیشه‌ای */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 0, 51, 0.03);
+    }
+
+    /* چارت */
+    #chart-container { width: 100%; height: 250px; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+
+    /* آمار */
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .stats-row span { color: #888; }
+    .stats-row b { font-size: 16px; }
+    #lblSignal { color: #fff; }
+    #lblPrice { color: var(--neon-red); }
+
+    /* منوهای کشویی رنگی */
+    .selector-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    select {
+      width: 100%;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+
+    /* رنگ‌بندی اختصاصی برای هر منو */
+    #symbolSelect {
+      border: 1px solid #00f3ff;
+      color: #00f3ff;
+      box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+    }
+    #symbolSelect:focus { box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
+
+    #tfSelect {
+      border: 1px solid #ffd700;
+      color: #ffd700;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    }
+    #tfSelect:focus { box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+
+
+    /* تب‌بندی */
+    .tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+    }
+    .tab {
+      flex: 1;
+      padding: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      color: #888;
+      transition: 0.3s;
+      text-align: center;
+    }
+    .tab.active {
+      background: rgba(255, 51, 51, 0.2);
+      color: var(--neon-red);
+      box-shadow: inset 0 0 10px var(--neon-red-glow);
+    }
+
+    /* دکمه‌ها */
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-buy {
+      background: linear-gradient(135deg, rgba(0, 255, 102, 0.2), rgba(0, 200, 80, 0.4));
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: 0 0 15px var(--neon-green-glow);
+    }
+    .btn-buy:hover { background: rgba(0, 255, 102, 0.3); box-shadow: 0 0 25px var(--neon-green); }
+
+    .btn-sell {
+      background: linear-gradient(135deg, rgba(255, 51, 51, 0.2), rgba(200, 0, 40, 0.4));
+      border: 1px solid var(--neon-red);
+      color: var(--neon-red);
+      box-shadow: 0 0 15px var(--neon-red-glow);
+    }
+    .btn-sell:hover { background: rgba(255, 51, 51, 0.3); box-shadow: 0 0 25px var(--neon-red); }
+
+    .btn-connect {
+      background: linear-gradient(135deg, var(--neon-red), #aa0000);
+      border: 1px solid var(--neon-red);
+      box-shadow: 0 0 15px var(--neon-red-glow);
+      margin-top: 10px;
+    }
+
+    /* ورودی‌ها */
+    input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-color);
+      color: var(--neon-red);
+      border-radius: 8px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: 0.3s;
+    }
+    input:focus {
+      border-color: var(--neon-red);
+      box-shadow: 0 0 10px var(--neon-red-glow);
+    }
+
+    /* لاگ‌ها */
+    .log-box {
+      background: #000;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      height: 100px;
+      overflow-y: auto;
+      color: #00ff66;
+      text-align: left;
+      line-height: 1.4;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <div class="header">
+      <button class="back-btn" onclick="window.location.href='index.html'">← BACK</button>
+      <h1>CRYPTO</h1>
+      <div style="width: 60px;"></div>
+    </div>
+
+    <!-- MAIN CHART & SELECTORS -->
+    <div class="card">
+      <div class="selector-row">
+        <!-- لیست کامل و مرتب‌شده ارزها -->
+        <select id="symbolSelect" onchange="refreshData()">
+          <option value="1INCHUSDT">1INCH/USDT</option>
+          <option value="AAVEUSDT">AAVE/USDT</option>
+          <option value="ADAUSDT">ADA/USDT</option>
+          <option value="ALGOUSDT">ALGO/USDT</option>
+          <option value="APEUSDT">APE/USDT</option>
+          <option value="APTUSDT">APT/USDT</option>
+          <option value="ARBUSDT">ARB/USDT</option>
+          <option value="ATOMUSDT">ATOM/USDT</option>
+          <option value="AVAXUSDT">AVAX/USDT</option>
+          <option value="AXSUSDT">AXS/USDT</option>
+          <option value="BCHUSDT">BCH/USDT</option>
+          <option value="BNBUSDT">BNB/USDT</option>
+          <option value="BTCUSDT">BTC/USDT</option>
+          <option value="CELOUSDT">CELO/USDT</option>
+          <option value="CHZUSDT">CHZ/USDT</option>
+          <option value="COMPUSDT">COMP/USDT</option>
+          <option value="CRVUSDT">CRV/USDT</option>
+          <option value="DASHUSDT">DASH/USDT</option>
+          <option value="DOGEUSDT">DOGE/USDT</option>
+          <option value="DOTUSDT">DOT/USDT</option>
+          <option value="EGLDUSDT">EGLD/USDT</option>
+          <option value="ENJUSDT">ENJ/USDT</option>
+          <option value="ETCUSDT">ETC/USDT</option>
+          <option value="ETHUSDT">ETH/USDT</option>
+          <option value="FETUSDT">FET/USDT</option>
+          <option value="FILUSDT">FIL/USDT</option>
+          <option value="FLOKIUSDT">FLOKI/USDT</option>
+          <option value="FTMUSDT">FTM/USDT</option>
+          <option value="GALAUSDT">GALA/USDT</option>
+          <option value="GMTUSDT">GMT/USDT</option>
+          <option value="GRTUSDT">GRT/USDT</option>
+          <option value="HBARUSDT">HBAR/USDT</option>
+          <option value="ICPUSDT">ICP/USDT</option>
+          <option value="IMXUSDT">IMX/USDT</option>
+          <option value="INJUSDT">INJ/USDT</option>
+          <option value="IOTAUSDT">IOTA/USDT</option>
+          <option value="JUPUSDT">JUP/USDT</option>
+          <option value="KAVAUSDT">KAVA/USDT</option>
+          <option value="LDOUSDT">LDO/USDT</option>
+          <option value="LINKUSDT">LINK/USDT</option>
+          <option value="LTCUSDT">LTC/USDT</option>
+          <option value="LUNCUSDT">LUNC/USDT</option>
+          <option value="MANAUSDT">MANA/USDT</option>
+          <option value="MATICUSDT">MATIC/USDT</option>
+          <option value="MKRUSDT">MKR/USDT</option>
+          <option value="NEARUSDT">NEAR/USDT</option>
+          <option value="NEOUSDT">NEO/USDT</option>
+          <option value="ONTUSDT">ONT/USDT</option>
+          <option value="OPUSDT">OP/USDT</option>
+          <option value="ORDIUSDT">ORDI/USDT</option>
+          <option value="PENDLEUSDT">PENDLE/USDT</option>
+          <option value="PEPEUSDT">PEPE/USDT</option>
+          <option value="PYTHUSDT">PYTH/USDT</option>
+          <option value="QTUMUSDT">QTUM/USDT</option>
+          <option value="RNDRUSDT">RNDR/USDT</option>
+          <option value="ROSEUSDT">ROSE/USDT</option>
+          <option value="RUNEUSDT">RUNE/USDT</option>
+          <option value="SANDUSDT">SAND/USDT</option>
+          <option value="SEIUSDT">SEI/USDT</option>
+          <option value="SHIBUSDT">SHIB/USDT</option>
+          <option value="SNXUSDT">SNX/USDT</option>
+          <option value="SOLUSDT">SOL/USDT</option>
+          <option value="STXUSDT">STX/USDT</option>
+          <option value="SUIUSDT">SUI/USDT</option>
+          <option value="SUSHIUSDT">SUSHI/USDT</option>
+          <option value="THETAUSDT">THETA/USDT</option>
+          <option value="TIAUSDT">TIA/USDT</option>
+          <option value="TRXUSDT">TRX/USDT</option>
+          <option value="UNIUSDT">UNI/USDT</option>
+          <option value="VETUSDT">VET/USDT</option>
+          <option value="WAVESUSDT">WAVES/USDT</option>
+          <option value="WIFUSDT">WIF/USDT</option>
+          <option value="XLMUSDT">XLM/USDT</option>
+          <option value="XMRUSDT">XMR/USDT</option>
+          <option value="XRPUSDT">XRP/USDT</option>
+          <option value="YFIUSDT">YFI/USDT</option>
+          <option value="ZECUSDT">ZEC/USDT</option>
+        </select>
+        <!-- تایم‌فریم -->
+        <select id="tfSelect" onchange="refreshData()">
+          <option value="1m">1m</option>
+          <option value="5m">5m</option>
+          <option value="15m" selected>15m</option>
+          <option value="1h">1h</option>
+          <option value="4h">4h</option>
+          <option value="1d">1d</option>
+        </select>
+      </div>
+      
+      <div id="chart-container"></div>
+      
+      <div class="stats-row">
+        <span>Price:</span>
+        <b id="lblPrice">-</b>
+      </div>
+      <div class="stats-row">
+        <span>3ICHI Signal:</span>
+        <b id="lblSignal">-</b>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" id="tab-sim" onclick="switchTab('sim')">Simulator</div>
+      <div class="tab" id="tab-live" onclick="switchTab('live')">Terminal</div>
+    </div>
+
+    <!-- SIMULATOR VIEW -->
+    <div id="view-sim" class="card">
+      <div class="stats-row">
+        <span>Virtual Balance:</span>
+        <b id="simBalance" style="color: var(--neon-green);">$10,000.00</b>
+      </div>
+      <div class="stats-row" style="margin-bottom: 15px;">
+        <span>Last Trade:</span>
+        <b id="simLastTrade" style="font-size: 12px; color: #aaa;">None</b>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-buy" onclick="executeTrade('sim', 'BUY')">SIM BUY</button>
+        <button class="btn btn-sell" onclick="executeTrade('sim', 'SELL')">SIM SELL</button>
+      </div>
+    </div>
+
+    <!-- TERMINAL VIEW -->
+    <div id="view-live" class="card hidden">
+      <div class="stats-row" style="margin-bottom: 5px;">
+        <span style="font-size: 12px;">Binance Testnet Keys</span>
+      </div>
+      <input type="text" id="apiKey" placeholder="API Key" style="margin-bottom: 8px;">
+      <input type="password" id="apiSecret" placeholder="API Secret" style="margin-bottom: 8px;">
+      <button class="btn btn-connect" onclick="connectBroker()">CONNECT BROKER</button>
+      
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn btn-buy" onclick="executeTrade('live', 'BUY')">REAL BUY</button>
+        <button class="btn btn-sell" onclick="executeTrade('live', 'SELL')">REAL SELL</button>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="card">
+      <div class="log-box" id="logBox">Initializing Crypto Module...</div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentMode = 'sim';
+    let currentSymbol = '1INCHUSDT';
+    let currentTf = '15m';
+    let latestPrice = 0;
+    let chart, candleSeries;
+
+    function log(msg) {
+      const box = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString();
+      box.innerHTML = `[${time}] ${msg}<br>` + box.innerHTML;
+    }
+
+    function initChart() {
+      const container = document.getElementById('chart-container');
+      chart = LightweightCharts.createChart(container, {
+        layout: { background: { color: 'transparent' }, textColor: '#888' },
+        grid: { vertLines: { color: 'rgba(255,255,255,0.05)' }, horzLines: { color: 'rgba(255,255,255,0.05)' } },
+        timeScale: { timeVisible: true, secondsVisible: false },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+      });
+      candleSeries = chart.addCandlestickSeries({
+        upColor: '#00ff66', downColor: '#ff3333', borderVisible: false,
+        wickUpColor: '#00ff66', wickDownColor: '#ff3333'
+      });
+      window.addEventListener('resize', () => chart.applyOptions({ width: container.clientWidth }));
+    }
+
+    function switchTab(mode) {
+      currentMode = mode;
+      document.getElementById('tab-sim').classList.toggle('active', mode === 'sim');
+      document.getElementById('tab-live').classList.toggle('active', mode === 'live');
+      document.getElementById('view-sim').classList.toggle('hidden', mode !== 'sim');
+      document.getElementById('view-live').classList.toggle('hidden', mode !== 'live');
+    }
+
+    async function refreshData() {
+      currentSymbol = document.getElementById('symbolSelect').value;
+      currentTf = document.getElementById('tfSelect').value;
+      
+      log(`Fetching ${currentSymbol} @ ${currentTf}...`);
+      
+      try {
+        const token = sessionStorage.getItem('3ichi_token') || 'default';
+        const res = await fetch(`/api/crypto?symbol=${currentSymbol}&tf=${currentTf}`, {
+          headers: { 'X-Auth-Token': token }
+        });
+        
+        const data = await res.json();
+        
+        if (data.error) throw new Error(data.error);
+        
+        candleSeries.setData(data.candles);
+        chart.timeScale().fitContent();
+        
+        latestPrice = data.signal.price;
+        document.getElementById('lblPrice').innerText = latestPrice;
+        
+        const sig = data.signal.trend === 1 ? 'BUY' : data.signal.trend === -1 ? 'SELL' : 'FLAT';
+        const sigEl = document.getElementById('lblSignal');
+        sigEl.innerText = sig;
+        sigEl.style.color = sig === 'BUY' ? 'var(--neon-green)' : sig === 'SELL' ? 'var(--neon-red)' : '#fff';
+        
+        log(`Data updated successfully.`);
+        
+      } catch (e) {
+        log(`Data Error: ${e.message}`);
+        generateMockData();
+      }
+    }
+
+    function generateMockData() {
+      const now = Math.floor(Date.now() / 1000);
+      const candles = [];
+      let price = 60000;
+      for (let i = 250; i > 0; i--) {
+        const open = price;
+        const close = price + (Math.random() - 0.5) * 500;
+        const high = Math.max(open, close) + Math.random() * 100;
+        const low = Math.min(open, close) - Math.random() * 100;
+        candles.push({ time: now - (i * 900), open, high, low, close });
+        price = close;
+      }
+      candleSeries.setData(candles);
+      chart.timeScale().fitContent();
+      latestPrice = price;
+      document.getElementById('lblPrice').innerText = price.toFixed(2);
+      document.getElementById('lblSignal').innerText = 'BUY';
+      document.getElementById('lblSignal').style.color = 'var(--neon-green)';
+      log("⚠️ Running in Local Mode (Mock Data).");
+    }
+
+    async function loadSimBalance() {
+      try {
+        const token = sessionStorage.getItem('3ichi_token') || 'default';
+        const res = await fetch('/api/sim-data', { headers: { 'X-Auth-Token': token } });
+        const data = await res.json();
+        document.getElementById('simBalance').innerText = '$' + data.balance.toFixed(2);
+      } catch (e) {
+         document.getElementById('simBalance').innerText = '$10,000.00';
+      }
+    }
+
+    async function connectBroker() {
+      const k = document.getElementById('apiKey').value;
+      const s = document.getElementById('apiSecret').value;
+      if (!k || !s) return log("⚠️ Enter API Key and Secret.");
+      
+      log("Encrypting and saving keys...");
+      try {
+        const token = sessionStorage.getItem('3ichi_token') || 'default';
+        const res = await fetch('/api/connect', {
+          method: 'POST',
+          headers: { 'X-Auth-Token': token },
+          body: JSON.stringify({ apiKey: k, apiSecret: s })
+        });
+        const data = await res.json();
+        if (data.success) {
+          log("✅ Keys secured. Ready for Live Trading.");
+          document.getElementById('apiKey').value = '';
+          document.getElementById('apiSecret').value = '';
+        } else {
+          log("❌ Error: " + data.error);
+        }
+      } catch (e) { log("Connection failed."); }
+    }
+
+    async function executeTrade(mode, side) {
+      if (latestPrice === 0) return log("⚠️ Price not loaded yet.");
+      
+      log(`Sending ${mode.toUpperCase()} ${side} order...`);
+      
+      try {
+        const token = sessionStorage.getItem('3ichi_token') || 'default';
+        const res = await fetch('/api/trade', {
+          method: 'POST',
+          headers: { 'X-Auth-Token': token },
+          body: JSON.stringify({
+            mode, side, symbol: currentSymbol, price: latestPrice, qty: 0.001
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          log(`✅ ${mode.toUpperCase()} Order executed!`);
+          if (mode === 'sim') {
+            document.getElementById('simBalance').innerText = '$' + data.balance.toFixed(2);
+            document.getElementById('simLastTrade').innerText = `${side} @ $${latestPrice}`;
+          }
+        } else {
+          log(`❌ Error: ${JSON.stringify(data.error || data)}`);
+        }
+      } catch (e) {
+        if (mode === 'sim') {
+           log(`✅ SIM ${side} Order (Local Mock) executed!`);
+        } else {
+           log(`Trade failed: ${e.message}`);
+        }
+      }
+    }
+
+    window.onload = () => {
+      initChart();
+      loadSimBalance();
+      refreshData();
+    };
+  </script>
+</body>
+</html>
